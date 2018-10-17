@@ -80,6 +80,8 @@ func main() {
 		}
 		// parse each partition and get replication status
 		for _, partition := range partitions {
+
+			// find the number of replicas
 			replicas, err := client.Replicas(topic, partition)
 			if err != nil {
 				log.WithFields(logrus.Fields{
@@ -88,7 +90,11 @@ func main() {
 				}).Fatal("Error listing partitions")
 			}
 
-			log.Debug("found topic", "topic", topic, "partition", partition, "replica", replicas)
+			log.WithFields(logrus.Fields{
+				"topic":     topic,
+				"partition": partition,
+				"replica":   replicas,
+			}).Debug("found topic info")
 
 			// exit with error if replication not OK
 			if *replicaLevel > 0 && len(replicas) != *replicaLevel {
