@@ -47,7 +47,7 @@ func main() {
 	// init consumer
 	client, err := sarama.NewClient(brokersList, config)
 	if err != nil {
-		logrus.Errorf("Failed to start sarama client: %s", err)
+		logrus.Fatalf("Failed to start sarama client: %s", err)
 	}
 	defer client.Close()
 
@@ -58,9 +58,11 @@ func main() {
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"err": err,
-			}).Error("Error Listing Topics")
+			}).Fatal("Error Listing Topics")
 		}
 	}
+
+	// debug the list of topics to check
 	logrus.WithFields(logrus.Fields{
 		"topics": topicsList,
 		"len":    len(topicsList),
@@ -73,7 +75,7 @@ func main() {
 			logrus.WithFields(logrus.Fields{
 				"err":   err,
 				"topic": topic,
-			}).Error("Error Listing Partitions")
+			}).Fatal("Error Listing Partitions")
 		}
 		// parse each partition and get replication status
 		for _, partition := range partitions {
@@ -82,7 +84,7 @@ func main() {
 				logrus.WithFields(logrus.Fields{
 					"topic":     topic,
 					"partition": partition,
-				}).Error("Error listing partitions")
+				}).Fatal("Error listing partitions")
 			}
 
 			logrus.Debug("found topic", "topic", topic, "partition", partition, "replica", replicas)
@@ -93,7 +95,6 @@ func main() {
 					"topic":     topic,
 					"partition": partition,
 				}).Fatalf("topics %s:%d is not fully replicated", topic, partition)
-				os.Exit(1)
 			}
 		}
 	}
