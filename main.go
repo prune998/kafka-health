@@ -19,19 +19,20 @@ var (
 
 func main() {
 	flag.Parse()
+	var log = logrus.New()
 
 	// Log as JSON instead of the default ASCII formatter.
-	logrus.SetFormatter(&logrus.JSONFormatter{})
+	log.SetFormatter(&logrus.JSONFormatter{})
 	myLogLevel, err := logrus.ParseLevel(*logLevel)
 	if err != nil {
 		myLogLevel = logrus.WarnLevel
 	}
-	logrus.SetLevel(myLogLevel)
+	log.SetLevel(myLogLevel)
 
 	// Output to stdout instead of the default stderr
-	logrus.SetOutput(os.Stdout)
+	log.SetOutput(os.Stdout)
 
-	logrus.WithFields(logrus.Fields{
+	log.WithFields(logrus.Fields{
 		"version": version,
 		"brokers": *broker}).Info("starting app")
 
@@ -47,7 +48,7 @@ func main() {
 	// init consumer
 	client, err := sarama.NewClient(brokersList, config)
 	if err != nil {
-		logrus.Fatalf("Failed to start sarama client: %s", err)
+		log.Fatalf("Failed to start sarama client: %s", err)
 	}
 	defer client.Close()
 
@@ -56,14 +57,14 @@ func main() {
 	if len(topicsList) == 1 && topicsList[0] == "" {
 		topicsList, err = client.Topics()
 		if err != nil {
-			logrus.WithFields(logrus.Fields{
+			log.WithFields(logrus.Fields{
 				"err": err,
 			}).Fatal("Error Listing Topics")
 		}
 	}
 
 	// debug the list of topics to check
-	logrus.WithFields(logrus.Fields{
+	log.WithFields(logrus.Fields{
 		"topics": topicsList,
 		"len":    len(topicsList),
 	}).Debug("topic list generated")
@@ -72,7 +73,7 @@ func main() {
 	for _, topic := range topicsList {
 		partitions, err := client.Partitions(topic)
 		if err != nil {
-			logrus.WithFields(logrus.Fields{
+			log.WithFields(logrus.Fields{
 				"err":   err,
 				"topic": topic,
 			}).Fatal("Error Listing Partitions")
@@ -81,17 +82,17 @@ func main() {
 		for _, partition := range partitions {
 			replicas, err := client.Replicas(topic, partition)
 			if err != nil {
-				logrus.WithFields(logrus.Fields{
+				log.WithFields(logrus.Fields{
 					"topic":     topic,
 					"partition": partition,
 				}).Fatal("Error listing partitions")
 			}
 
-			logrus.Debug("found topic", "topic", topic, "partition", partition, "replica", replicas)
+			log.Debug("found topic", "topic", topic, "partition", partition, "replica", replicas)
 
 			// exit with error if replication not OK
 			if *replicaLevel > 0 && len(replicas) != *replicaLevel {
-				logrus.WithFields(logrus.Fields{
+				log.WithFields(logrus.Fields{
 					"topic":     topic,
 					"partition": partition,
 				}).Fatalf("topics %s:%d is not fully replicated", topic, partition)
